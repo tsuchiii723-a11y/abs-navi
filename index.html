@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDX-50専用：ABS切削ナビ V3.7</title>
+    <title>MDX-50：ABS切削ナビ V4.0 共有版</title>
     <style>
         :root {
             --primary: #2563eb; --rough-color: #f59e0b; --fine-color: #06b6d4;
@@ -13,6 +13,7 @@
         .container { width: 100%; max-width: 480px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         h1 { font-size: 1.1rem; text-align: center; color: var(--primary); margin-bottom: 5px; font-weight: 800; }
         .version-tag { text-align: center; font-size: 0.65rem; color: #94a3b8; margin-bottom: 10px; font-weight: bold; }
+        .sync-status { text-align: center; font-size: 0.6rem; color: var(--success); margin-bottom: 15px; }
         .machine-guard { font-size: 0.65rem; text-align: center; color: #ef4444; background: #fee2e2; padding: 4px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; }
         
         .section-label { font-size: 0.75rem; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block; }
@@ -29,7 +30,7 @@
         button.active#m-speed { border-color: var(--danger); background: var(--danger); color: white; }
 
         .input-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; background: #fff; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; background: #fff; box-sizing: border-box; }
 
         .result-card { background: #0f172a; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .res-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -40,24 +41,27 @@
         .m-val-area { grid-column: span 2; background: #334155; text-align: center; padding: 8px; border-radius: 6px; }
 
         .log-btn { background: var(--success); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.7rem; }
+        .log-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.65rem; }
         th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
+        td { padding: 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+        .status-ok { color: var(--success); font-weight: bold; }
+        .status-ng { color: var(--danger); font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>ABS NAVI</h1>
-        <div class="version-tag">Version 3.7 (Limit Guarded)</div>
-        <div class="machine-guard">MDX-50 PROTECTION ACTIVE: S≦15,000 / F≦3,600</div>
+        <div class="version-tag">Version 4.0 (Global Shared)</div>
+        <div id="syncStatus" class="sync-status">● クラウド同期中...</div>
+        <div class="machine-guard">MDX-50 PROTECTION: S≦15,000 / F≦3,600</div>
 
-        <span class="section-label">工程選択</span>
+        <span class="section-label">工程 & モード</span>
         <div class="btn-group">
             <button id="p-rough" class="active" onclick="updateProcess('rough')">荒削り</button>
             <button id="p-fine" onclick="updateProcess('fine')">仕上げ</button>
         </div>
-
-        <span class="section-label">モード</span>
         <div class="btn-group">
             <button id="m-norm" class="active" onclick="updateMode('normal')">通常</button>
             <button id="m-speed" onclick="updateMode('speed')">スピード</button>
@@ -97,16 +101,20 @@
         </div>
 
         <div style="border-top:1px solid #f1f5f9; padding-top:15px;">
-            <button class="log-btn" onclick="saveLog()">この条件を保存</button>
+            <button id="saveBtn" class="log-btn" onclick="saveLog()">実績をクラウドに保存</button>
             <div style="display:flex; gap:8px; margin-top:10px;">
                 <select id="res_status" style="flex:1;"><option value="OK">OK</option><option value="NG">NG</option></select>
-                <input type="text" id="memo" placeholder="メモ" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:4px;">
+                <input type="text" id="memo" placeholder="メモを残す" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:4px;">
             </div>
+            <span class="section-label" style="margin-top:20px;">チームの最新実績 (共有)</span>
             <table id="logTable"></table>
         </div>
     </div>
 
     <script>
+        // 設定されたGoogle Apps ScriptのURL
+        const API_URL = "https://script.google.com/macros/s/AKfycbwYgf5pIm0cUFSTuEwaCdYCV3XHR0oCVPhoqMhQsFL9BE7DKbNeyNUVNhc19PcInWUToQ/exec";
+
         let currentProcess = 'rough';
         let currentMode = 'normal';
         const S_MAX = 15000;
@@ -131,32 +139,25 @@
             const h = parseFloat(document.getElementById('depth').value);
             let f, s, c, p, m_val = 0.20;
 
-            // 1. ベース条件 (Φ別)
             if(d <= 0.8) { s = 14000; f = 400; c = 0.05; p = 0.30; } 
             else if(d <= 1.0) { s = 12000; f = 550; c = 0.10; p = 0.40; } 
             else if(d <= 2.0) { s = 11000; f = 900; c = 0.15; p = 0.70; }
             else if(d <= 3.0) { s = 10000; f = 1200; c = 0.20; p = 1.00; } 
             else { s = 6500; f = 1400; c = 0.50; p = 2.00; }
 
-            // 2. 仕上げ補正
             if(currentProcess === 'fine') {
                 s = s * 1.2; f = f * 0.8;
                 c = (d <= 1.0 ? 0.05 : 0.10); p = 0.10; m_val = 0.00;
             }
 
-            // 3. モード補正
             if(currentMode === 'speed') { f = f * 1.6; s = s * 1.2; }
-            
-            // 4. 深さによる減速
             if(h > d * 4) f = f * 0.7; 
 
-            // 5. 🛑 MDX-50 HARD LIMITER 🛑
             let sLimit = (s >= S_MAX);
             let fLimit = (f >= F_MAX);
             if (sLimit) s = S_MAX;
             if (fLimit) f = F_MAX;
 
-            // 6. 表示
             document.getElementById('rs').innerText = Math.round(s).toLocaleString();
             document.getElementById('rf').innerText = Math.round(f).toLocaleString();
             document.getElementById('rc').innerText = c.toFixed(2);
@@ -166,29 +167,75 @@
             document.getElementById('f-limit').style.display = fLimit ? 'block' : 'none';
         }
 
-        function saveLog() {
-            const log = {
+        // --- ☁️ クラウド連携機能 ---
+
+        async function saveLog() {
+            const saveBtn = document.getElementById('saveBtn');
+            const memoInput = document.getElementById('memo');
+            const data = {
                 d: document.getElementById('tool').value,
                 f: document.getElementById('rf').innerText,
                 s: document.getElementById('rs').innerText,
                 res: document.getElementById('res_status').value,
-                memo: document.getElementById('memo').value || "-",
-                date: new Date().toLocaleDateString()
+                memo: memoInput.value || "-"
             };
-            let logs = JSON.parse(localStorage.getItem('smartLogs_v3.7') || '[]');
-            logs.unshift(log);
-            localStorage.setItem('smartLogs_v3.7', JSON.stringify(logs.slice(0, 10)));
-            showLogs();
-            document.getElementById('memo').value = "";
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "送信中...";
+
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(data)
+                });
+                memoInput.value = "";
+                saveBtn.innerText = "保存完了！";
+                setTimeout(() => { 
+                    saveBtn.disabled = false; 
+                    saveBtn.innerText = "実績をクラウドに保存";
+                }, 2000);
+                loadLogs(); // 保存後に再読み込み
+            } catch (e) {
+                alert("送信に失敗しました。ネット接続を確認してください。");
+                saveBtn.disabled = false;
+                saveBtn.innerText = "再試行する";
+            }
         }
 
-        function showLogs() {
-            const logs = JSON.parse(localStorage.getItem('smartLogs_v3.7') || '[]');
-            let html = logs.map(l => `<tr><td>${l.date}</td><td>Φ${l.d}</td><td>F${l.f}/S${l.s}</td><td>${l.res}</td></tr>`).join('');
-            document.getElementById('logTable').innerHTML = logs.length ? '<tr><th>日付</th><th>工具</th><th>条件</th><th>結果</th></tr>' + html : '';
+        async function loadLogs() {
+            const statusTag = document.getElementById('syncStatus');
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                // 最新10件を表示
+                const recentLogs = data.reverse().slice(0, 10);
+                let html = '<tr><th>日付</th><th>工具</th><th>条件</th><th>結果</th></tr>';
+                recentLogs.forEach(row => {
+                    const date = new Date(row[0]).toLocaleDateString('ja-JP', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                    const statusClass = row[4] === 'OK' ? 'status-ok' : 'status-ng';
+                    html += `<tr>
+                        <td>${date}</td>
+                        <td>Φ${row[1]}</td>
+                        <td>F${row[2]}<br>S${row[3]}</td>
+                        <td><span class="${statusClass}">${row[4]}</span><br><small>${row[5]}</small></td>
+                    </tr>`;
+                });
+                document.getElementById('logTable').innerHTML = html;
+                statusTag.innerText = "● クラウドと同期済み";
+                statusTag.style.color = "var(--success)";
+            } catch (e) {
+                statusTag.innerText = "○ オフラインモード";
+                statusTag.style.color = "#94a3b8";
+            }
         }
 
-        window.onload = () => { calculate(); showLogs(); };
+        window.onload = () => {
+            calculate();
+            loadLogs();
+            // 30秒ごとに自動更新
+            setInterval(loadLogs, 30000);
+        };
     </script>
 </body>
 </html>

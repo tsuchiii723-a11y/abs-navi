@@ -3,45 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDX-50専用：ABS切削ナビ V3.5</title>
+    <title>MDX-50専用：ABS切削ナビ V3.7</title>
     <style>
         :root {
             --primary: #2563eb; --rough-color: #f59e0b; --fine-color: #06b6d4;
             --danger: #ef4444; --success: #10b981; --bg: #f8fafc;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 480px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         h1 { font-size: 1.1rem; text-align: center; color: var(--primary); margin-bottom: 5px; font-weight: 800; }
-        .version-tag { text-align: center; font-size: 0.6rem; color: #94a3b8; margin-bottom: 15px; }
-        .machine-spec { font-size: 0.65rem; text-align: center; color: #64748b; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .version-tag { text-align: center; font-size: 0.65rem; color: #94a3b8; margin-bottom: 10px; font-weight: bold; }
+        .machine-guard { font-size: 0.65rem; text-align: center; color: #ef4444; background: #fee2e2; padding: 4px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; }
         
         .section-label { font-size: 0.75rem; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block; }
         
         .btn-group { display: flex; gap: 8px; margin-bottom: 16px; }
         .btn-group button { 
             flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; 
-            cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; color: #64748b;
+            cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; color: #64748b; transition: all 0.2s;
         }
         
-        button#p-rough.active { border-color: var(--rough-color); background: var(--rough-color); color: white; }
-        button#p-fine.active { border-color: var(--fine-color); background: var(--fine-color); color: white; }
-        button#m-speed.active { border-color: var(--danger); background: var(--danger); color: white; }
-        button#m-norm.active { border-color: var(--primary); background: var(--primary); color: white; }
+        button.active#p-rough { border-color: var(--rough-color); background: var(--rough-color); color: white; }
+        button.active#p-fine { border-color: var(--fine-color); background: var(--fine-color); color: white; }
+        button.active#m-norm { border-color: var(--primary); background: var(--primary); color: white; }
+        button.active#m-speed { border-color: var(--danger); background: var(--danger); color: white; }
 
         .input-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; background: #fff; }
 
         .result-card { background: #0f172a; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .res-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .res-item { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; position: relative; }
         .res-label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; display: block; font-weight: bold; }
-        .res-val { font-size: 1.4rem; font-weight: bold; font-family: 'Courier New', monospace; }
-        .limit-tag { position: absolute; top: 2px; right: 5px; font-size: 0.5rem; color: var(--danger); font-weight: bold; display: none; }
+        .res-val { font-size: 1.4rem; font-weight: bold; font-family: 'Courier New', monospace; color: #f8fafc; }
+        .limit-tag { position: absolute; top: 2px; right: 5px; font-size: 0.55rem; color: #f87171; font-weight: 900; display: none; }
         .m-val-area { grid-column: span 2; background: #334155; text-align: center; padding: 8px; border-radius: 6px; }
 
-        .alert { background: #fef2f2; border-left: 4px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 12px; display: none; }
         .log-btn { background: var(--success); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.7rem; }
         th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
         td { padding: 8px; border-bottom: 1px solid #f1f5f9; }
@@ -50,27 +48,29 @@
 <body>
     <div class="container">
         <h1>ABS NAVI</h1>
-        <div class="version-tag">Ver 3.5 (Tool Linked)</div>
-        <div class="machine-spec">MDX-50 Spec: S_max 15,000 / F_max 3,600</div>
+        <div class="version-tag">Version 3.7 (Limit Guarded)</div>
+        <div class="machine-guard">MDX-50 PROTECTION ACTIVE: S≦15,000 / F≦3,600</div>
 
-        <span class="section-label">工程 & モード</span>
+        <span class="section-label">工程選択</span>
         <div class="btn-group">
-            <button id="p-rough" class="active" onclick="setProcess('rough')">荒削り</button>
-            <button id="p-fine" onclick="setProcess('fine')">仕上げ</button>
-        </div>
-        <div class="btn-group">
-            <button id="m-norm" class="active" onclick="setMode('normal')">通常</button>
-            <button id="m-speed" onclick="setMode('speed')">スピード</button>
+            <button id="p-rough" class="active" onclick="updateProcess('rough')">荒削り</button>
+            <button id="p-fine" onclick="updateProcess('fine')">仕上げ</button>
         </div>
 
-        <span class="section-label">使用エンドミル</span>
+        <span class="section-label">モード</span>
+        <div class="btn-group">
+            <button id="m-norm" class="active" onclick="updateMode('normal')">通常</button>
+            <button id="m-speed" onclick="updateMode('speed')">スピード</button>
+        </div>
+
+        <span class="section-label">エンドミル (型番リンク)</span>
         <div class="input-row">
             <select id="tool" onchange="calculate()">
                 <option value="0.8">Φ0.8 (XAL-BEM2LB0.4-8)</option>
-                <option value="1">Φ1.0 (XAL-PEM2LB1-10)</option>
-                <option value="2">Φ2.0 (SEC-PLEM2EXL2-20)</option>
-                <option value="3" selected>Φ3.0 (XAL-HPEM4L3)</option>
-                <option value="6">Φ6.0 (ラフィング相当)</option>
+                <option value="1.0">Φ1.0 (XAL-PEM2LB1-10)</option>
+                <option value="2.0">Φ2.0 (SEC-PLEM2EXL2-20)</option>
+                <option value="3.0" selected>Φ3.0 (XAL-HPEM4L3)</option>
+                <option value="6.0">Φ6.0 (一般ラフィング)</option>
             </select>
             <div>
                 <span class="section-label">切削深さ (mm)</span>
@@ -81,12 +81,12 @@
         <div class="result-card">
             <div class="res-grid">
                 <div class="res-item">
-                    <span class="limit-tag" id="s-limit">MAX</span>
-                    <span class="res-label">主軸回転数 (S)</span>
+                    <span class="limit-tag" id="s-limit">LIMIT!</span>
+                    <span class="res-label">回転数 (S)</span>
                     <span id="rs" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> rpm</small>
                 </div>
                 <div class="res-item">
-                    <span class="limit-tag" id="f-limit">MAX</span>
+                    <span class="limit-tag" id="f-limit">LIMIT!</span>
                     <span class="res-label">送り速度 (F)</span>
                     <span id="rf" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm/min</small>
                 </div>
@@ -94,11 +94,101 @@
                 <div class="res-item"><span class="res-label">パス間隔 (P)</span><span id="rp" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm</small></div>
                 <div class="m-val-area"><span class="res-label" style="display:inline; margin-right:10px;">仕上げ代 (M)</span><span id="rm" class="res-val" style="font-size:1.1rem;">-</span><small style="font-size:0.6rem;color:#94a3b8;"> mm</small></div>
             </div>
-            <div id="learningAlert" class="alert"></div>
         </div>
 
         <div style="border-top:1px solid #f1f5f9; padding-top:15px;">
-            <button class="log-btn" onclick="saveLog()">実績を保存</button>
+            <button class="log-btn" onclick="saveLog()">この条件を保存</button>
             <div style="display:flex; gap:8px; margin-top:10px;">
                 <select id="res_status" style="flex:1;"><option value="OK">OK</option><option value="NG">NG</option></select>
-                <input type="text" id="memo" placeholder="メモ" style="flex:2; padding:8px;
+                <input type="text" id="memo" placeholder="メモ" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            </div>
+            <table id="logTable"></table>
+        </div>
+    </div>
+
+    <script>
+        let currentProcess = 'rough';
+        let currentMode = 'normal';
+        const S_MAX = 15000;
+        const F_MAX = 3600;
+
+        function updateProcess(p) {
+            currentProcess = p;
+            document.getElementById('p-rough').classList.toggle('active', p === 'rough');
+            document.getElementById('p-fine').classList.toggle('active', p === 'fine');
+            calculate();
+        }
+
+        function updateMode(m) {
+            currentMode = m;
+            document.getElementById('m-norm').classList.toggle('active', m === 'normal');
+            document.getElementById('m-speed').classList.toggle('active', m === 'speed');
+            calculate();
+        }
+
+        function calculate() {
+            const d = parseFloat(document.getElementById('tool').value);
+            const h = parseFloat(document.getElementById('depth').value);
+            let f, s, c, p, m_val = 0.20;
+
+            // 1. ベース条件 (Φ別)
+            if(d <= 0.8) { s = 14000; f = 400; c = 0.05; p = 0.30; } 
+            else if(d <= 1.0) { s = 12000; f = 550; c = 0.10; p = 0.40; } 
+            else if(d <= 2.0) { s = 11000; f = 900; c = 0.15; p = 0.70; }
+            else if(d <= 3.0) { s = 10000; f = 1200; c = 0.20; p = 1.00; } 
+            else { s = 6500; f = 1400; c = 0.50; p = 2.00; }
+
+            // 2. 仕上げ補正
+            if(currentProcess === 'fine') {
+                s = s * 1.2; f = f * 0.8;
+                c = (d <= 1.0 ? 0.05 : 0.10); p = 0.10; m_val = 0.00;
+            }
+
+            // 3. モード補正
+            if(currentMode === 'speed') { f = f * 1.6; s = s * 1.2; }
+            
+            // 4. 深さによる減速
+            if(h > d * 4) f = f * 0.7; 
+
+            // 5. 🛑 MDX-50 HARD LIMITER 🛑
+            let sLimit = (s >= S_MAX);
+            let fLimit = (f >= F_MAX);
+            if (sLimit) s = S_MAX;
+            if (fLimit) f = F_MAX;
+
+            // 6. 表示
+            document.getElementById('rs').innerText = Math.round(s).toLocaleString();
+            document.getElementById('rf').innerText = Math.round(f).toLocaleString();
+            document.getElementById('rc').innerText = c.toFixed(2);
+            document.getElementById('rp').innerText = p.toFixed(2);
+            document.getElementById('rm').innerText = m_val.toFixed(2);
+            document.getElementById('s-limit').style.display = sLimit ? 'block' : 'none';
+            document.getElementById('f-limit').style.display = fLimit ? 'block' : 'none';
+        }
+
+        function saveLog() {
+            const log = {
+                d: document.getElementById('tool').value,
+                f: document.getElementById('rf').innerText,
+                s: document.getElementById('rs').innerText,
+                res: document.getElementById('res_status').value,
+                memo: document.getElementById('memo').value || "-",
+                date: new Date().toLocaleDateString()
+            };
+            let logs = JSON.parse(localStorage.getItem('smartLogs_v3.7') || '[]');
+            logs.unshift(log);
+            localStorage.setItem('smartLogs_v3.7', JSON.stringify(logs.slice(0, 10)));
+            showLogs();
+            document.getElementById('memo').value = "";
+        }
+
+        function showLogs() {
+            const logs = JSON.parse(localStorage.getItem('smartLogs_v3.7') || '[]');
+            let html = logs.map(l => `<tr><td>${l.date}</td><td>Φ${l.d}</td><td>F${l.f}/S${l.s}</td><td>${l.res}</td></tr>`).join('');
+            document.getElementById('logTable').innerHTML = logs.length ? '<tr><th>日付</th><th>工具</th><th>条件</th><th>結果</th></tr>' + html : '';
+        }
+
+        window.onload = () => { calculate(); showLogs(); };
+    </script>
+</body>
+</html>

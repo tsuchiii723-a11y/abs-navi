@@ -5,54 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MDX-50：ABS切削ナビ V4.4</title>
     <style>
-        /* 横方向の圧縮を防ぎ、スマホ画面に最適化 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
         :root {
             --primary: #2563eb; --rough-color: #f59e0b; --fine-color: #06b6d4;
             --danger: #ef4444; --success: #10b981; --bg: #f8fafc;
         }
-
-        body { 
-            font-family: -apple-system, sans-serif; 
-            background: var(--bg); margin: 0; padding: 10px; 
-            display: flex; justify-content: center;
-            overflow-x: hidden;
-        }
-
-        .container { 
-            width: 100%; max-width: 500px; 
-            background: white; padding: 18px; border-radius: 16px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; overflow-x: hidden; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 18px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         
-        h1 { font-size: 1.2rem; text-align: center; color: var(--primary); margin: 0 0 10px 0; font-weight: 800; }
+        /* ヘッダー・バージョン表示 */
+        .header { text-align: center; margin-bottom: 15px; }
+        h1 { font-size: 1.2rem; color: var(--primary); margin: 0; font-weight: 800; }
+        .version-badge { display: inline-block; font-size: 0.65rem; background: #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-top: 4px; }
         
-        #syncStatus { 
-            text-align: center; font-size: 0.7rem; margin-bottom: 12px; padding: 6px; 
-            border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer;
-        }
-
+        #syncStatus { text-align: center; font-size: 0.7rem; margin-bottom: 12px; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; }
         .section-label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin: 12px 0 6px 4px; display: block; }
         
         .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
-        .btn-group button { 
-            flex: 1; padding: 14px 2px; border: 2px solid #f1f5f9; border-radius: 10px; 
-            cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.9rem; color: #64748b; 
-        }
+        .btn-group button { flex: 1; padding: 14px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.9rem; color: #64748b; }
         button.active#p-rough { background: var(--rough-color); color: white; border-color: var(--rough-color); }
         button.active#p-fine { background: var(--fine-color); color: white; border-color: var(--fine-color); }
         button.active#m-norm { background: var(--primary); color: white; border-color: var(--primary); }
         button.active#m-speed { background: var(--danger); color: white; border-color: var(--danger); }
 
         .input-row { display: flex; flex-direction: column; gap: 10px; }
-        select, input { 
-            width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; 
-            font-size: 1rem; background: #fff;
-        }
+        select, input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; background: #fff; }
 
         .result-card { background: #0f172a; color: white; padding: 18px; border-radius: 14px; margin: 15px 0; }
-        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; }
+        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; border: 2px solid white; }
 
         .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .res-item { background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
@@ -71,7 +51,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>ABS NAVI</h1>
+        <div class="header">
+            <h1>ABS NAVI</h1>
+            <span class="version-badge">Ver 4.4 Cloud Sync</span>
+        </div>
+        
         <div id="syncStatus" onclick="loadLogs()">同期状態を確認中...</div>
 
         <div class="btn-group">
@@ -116,6 +100,7 @@
     </div>
 
     <script>
+        // 設定されたAPI URL
         const API_URL = "https://script.google.com/macros/s/AKfycbxEWBEYOHap3Y9EybJQUefFcQcHDJiyvDUDmm4ImPY0zB9gSTYDZJ1vicsmDIhi9exEmw/exec";
 
         let currentProcess = 'rough';
@@ -173,7 +158,6 @@
 
         async function saveLog() {
             const btn = document.getElementById('saveBtn');
-            // 全ての切削条件を確実にJSONに含める
             const data = {
                 toolName: document.getElementById('tool').options[document.getElementById('tool').selectedIndex].text,
                 d: document.getElementById('tool').value,
@@ -189,15 +173,11 @@
             };
             btn.disabled = true; btn.innerText = "送信中...";
             try {
-                // 送信処理（GASのdoPostへ）
-                await fetch(API_URL, { 
-                    method: "POST", 
-                    body: JSON.stringify(data) 
-                });
+                await fetch(API_URL, { method: "POST", body: JSON.stringify(data) });
                 document.getElementById('memo').value = "";
                 btn.innerText = "送信完了";
                 loadLogs();
-            } catch (e) { alert("通信エラー: デプロイ設定を確認してください"); }
+            } catch (e) { alert("通信エラーが発生しました"); }
             setTimeout(() => { btn.disabled = false; btn.innerText = "結果をクラウドに送信"; }, 2000);
         }
 

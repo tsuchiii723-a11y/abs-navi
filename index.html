@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ABS切削 Navigator (S,F,P,C,M)</title>
+    <title>MDX-50専用：ABS切削ナビ V3.5</title>
     <style>
         :root {
             --primary: #2563eb; --rough-color: #f59e0b; --fine-color: #06b6d4;
             --danger: #ef4444; --success: #10b981; --bg: #f8fafc;
         }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 480px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h1 { font-size: 1.1rem; text-align: center; color: var(--primary); margin-bottom: 20px; font-weight: 800; letter-spacing: 0.05em; }
+        h1 { font-size: 1.1rem; text-align: center; color: var(--primary); margin-bottom: 5px; font-weight: 800; }
+        .version-tag { text-align: center; font-size: 0.6rem; color: #94a3b8; margin-bottom: 15px; }
+        .machine-spec { font-size: 0.65rem; text-align: center; color: #64748b; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
         .section-label { font-size: 0.75rem; font-weight: bold; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block; }
         
         .btn-group { display: flex; gap: 8px; margin-bottom: 16px; }
         .btn-group button { 
             flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; 
-            cursor: pointer; font-weight: bold; background: white; transition: all 0.2s; 
-            font-size: 0.9rem; color: #64748b;
+            cursor: pointer; font-weight: bold; background: white; font-size: 0.9rem; color: #64748b;
         }
         
         button#p-rough.active { border-color: var(--rough-color); background: var(--rough-color); color: white; }
@@ -27,19 +28,19 @@
         button#m-speed.active { border-color: var(--danger); background: var(--danger); color: white; }
         button#m-norm.active { border-color: var(--primary); background: var(--primary); color: white; }
 
-        .input-row { display: flex; gap: 12px; margin-bottom: 20px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; background: #fff; }
+        .input-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box; }
 
-        /* SRP Playerスタイルの結果表示 */
         .result-card { background: #0f172a; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
         .res-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .res-item { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
+        .res-item { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; position: relative; }
         .res-label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; display: block; font-weight: bold; }
         .res-val { font-size: 1.4rem; font-weight: bold; font-family: 'Courier New', monospace; }
-        .m-val-area { grid-column: span 2; background: #334155; text-align: center; padding: 8px; border-radius: 6px; margin-top: 4px; }
+        .limit-tag { position: absolute; top: 2px; right: 5px; font-size: 0.5rem; color: var(--danger); font-weight: bold; display: none; }
+        .m-val-area { grid-column: span 2; background: #334155; text-align: center; padding: 8px; border-radius: 6px; }
 
-        .alert { background: #fef2f2; border-left: 4px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 12px; display: none; line-height: 1.4; }
-        .log-btn { background: var(--success); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem; }
+        .alert { background: #fef2f2; border-left: 4px solid var(--danger); color: var(--danger); padding: 12px; border-radius: 4px; font-size: 0.8rem; margin-top: 12px; display: none; }
+        .log-btn { background: var(--success); color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.7rem; }
         th { text-align: left; padding: 8px; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
@@ -48,34 +49,47 @@
 </head>
 <body>
     <div class="container">
-        <h1>ABS CUTTING NAVI <span style="font-weight:300;">for SRP Player</span></h1>
+        <h1>ABS NAVI</h1>
+        <div class="version-tag">Ver 3.5 (Tool Linked)</div>
+        <div class="machine-spec">MDX-50 Spec: S_max 15,000 / F_max 3,600</div>
 
-        <span class="section-label">工程選択</span>
+        <span class="section-label">工程 & モード</span>
         <div class="btn-group">
             <button id="p-rough" class="active" onclick="setProcess('rough')">荒削り</button>
             <button id="p-fine" onclick="setProcess('fine')">仕上げ</button>
         </div>
-
-        <span class="section-label">速度モード</span>
         <div class="btn-group">
             <button id="m-norm" class="active" onclick="setMode('normal')">通常</button>
             <button id="m-speed" onclick="setMode('speed')">スピード</button>
         </div>
 
-        <span class="section-label">工具 & 深さ</span>
+        <span class="section-label">使用エンドミル</span>
         <div class="input-row">
             <select id="tool" onchange="calculate()">
-                <option value="3">Φ3 / XAL-HPEM4L3</option>
-                <option value="1">Φ1 / XAL-PEM2LB1-10</option>
-                <option value="6">Φ6 / ラフィング相当</option>
+                <option value="0.8">Φ0.8 (XAL-BEM2LB0.4-8)</option>
+                <option value="1">Φ1.0 (XAL-PEM2LB1-10)</option>
+                <option value="2">Φ2.0 (SEC-PLEM2EXL2-20)</option>
+                <option value="3" selected>Φ3.0 (XAL-HPEM4L3)</option>
+                <option value="6">Φ6.0 (ラフィング相当)</option>
             </select>
-            <input type="number" id="depth" value="7.0" step="0.1" oninput="calculate()" placeholder="深さ">
+            <div>
+                <span class="section-label">切削深さ (mm)</span>
+                <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()">
+            </div>
         </div>
 
         <div class="result-card">
             <div class="res-grid">
-                <div class="res-item"><span class="res-label">主軸回転数 (S)</span><span id="rs" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> rpm</small></div>
-                <div class="res-item"><span class="res-label">送り速度 (F)</span><span id="rf" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm/min</small></div>
+                <div class="res-item">
+                    <span class="limit-tag" id="s-limit">MAX</span>
+                    <span class="res-label">主軸回転数 (S)</span>
+                    <span id="rs" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> rpm</small>
+                </div>
+                <div class="res-item">
+                    <span class="limit-tag" id="f-limit">MAX</span>
+                    <span class="res-label">送り速度 (F)</span>
+                    <span id="rf" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm/min</small>
+                </div>
                 <div class="res-item"><span class="res-label">切込量 (C)</span><span id="rc" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm</small></div>
                 <div class="res-item"><span class="res-label">パス間隔 (P)</span><span id="rp" class="res-val">-</span><small style="font-size:0.6rem;color:#64748b;"> mm</small></div>
                 <div class="m-val-area"><span class="res-label" style="display:inline; margin-right:10px;">仕上げ代 (M)</span><span id="rm" class="res-val" style="font-size:1.1rem;">-</span><small style="font-size:0.6rem;color:#94a3b8;"> mm</small></div>
@@ -84,121 +98,7 @@
         </div>
 
         <div style="border-top:1px solid #f1f5f9; padding-top:15px;">
-            <span class="section-label">実績の記録・学習</span>
-            <div style="display:flex; gap:8px;">
-                <select id="res_status" style="flex:1; padding:8px;">
-                    <option value="OK">OK</option>
-                    <option value="NG">NG (溶け)</option>
-                </select>
-                <input type="text" id="memo" placeholder="メモ" style="flex:2; padding:8px;">
-            </div>
-            <button class="log-btn" onclick="saveLog()">実績を保存して学習</button>
-            
+            <button class="log-btn" onclick="saveLog()">実績を保存</button>
             <div style="display:flex; gap:8px; margin-top:10px;">
-                <button onclick="exportData()" style="flex:1; background:none; border:1px solid #e2e8f0; color:#64748b; border-radius:4px; font-size:0.65rem; cursor:pointer; padding:5px;">出力</button>
-                <button onclick="document.getElementById('ifile').click()" style="flex:1; background:none; border:1px solid #e2e8f0; color:#64748b; border-radius:4px; font-size:0.65rem; cursor:pointer; padding:5px;">取込</button>
-                <input type="file" id="ifile" style="display:none" onchange="importData(this)">
-            </div>
-            <table id="logTable"></table>
-        </div>
-    </div>
-
-    <script>
-        let currentProcess = 'rough';
-        let currentMode = 'normal';
-
-        function setProcess(p) {
-            currentProcess = p;
-            document.getElementById('p-rough').className = (p === 'rough' ? 'active' : '');
-            document.getElementById('p-fine').className = (p === 'fine' ? 'active' : '');
-            calculate();
-        }
-
-        function setMode(m) {
-            currentMode = m;
-            document.getElementById('m-norm').className = (m === 'normal' ? 'active' : '');
-            document.getElementById('m-speed').className = (m === 'speed' ? 'active' : '');
-            calculate();
-        }
-
-        function calculate() {
-            const d = parseFloat(document.getElementById('tool').value);
-            const h = parseFloat(document.getElementById('depth').value);
-            let f, s, c, p, m_val = 0.20;
-
-            if(d === 1) { s = 12000; f = 500; c = 0.10; p = 0.40; } 
-            else if(d === 3) { s = 10000; f = 1000; c = 0.20; p = 1.00; } 
-            else { s = 5000; f = 1200; c = 0.50; p = 1.80; }
-
-            if(currentProcess === 'fine') {
-                f = f * 0.8; s = Math.min(s * 1.2, 12000);
-                c = (d === 1 ? 0.05 : 0.10); p = 0.10; m_val = 0.00;
-            }
-            if(currentMode === 'speed') { f = f * 1.5; s = Math.min(s * 1.2, 15000); }
-            if(h > d * 3) f = f * 0.6; // 深さ補正
-
-            f = Math.round(f); s = Math.round(s);
-
-            const logs = JSON.parse(localStorage.getItem('smartLogs_v3.2') || '[]');
-            const alertBox = document.getElementById('learningAlert');
-            alertBox.style.display = 'none';
-            logs.filter(l => l.res === 'NG' && l.d == d).forEach(log => {
-                if(s >= log.s * 0.95 && f >= log.f * 0.95) {
-                    f = Math.min(f, Math.round(log.f * 0.8));
-                    alertBox.innerHTML = `⚠️ 過去NGデータ(S${log.s}/F${log.f})に基づき速度を抑制しました。`;
-                    alertBox.style.display = 'block';
-                }
-            });
-
-            document.getElementById('rf').innerText = f;
-            document.getElementById('rs').innerText = s;
-            document.getElementById('rc').innerText = c.toFixed(2);
-            document.getElementById('rp').innerText = p.toFixed(2);
-            document.getElementById('rm').innerText = m_val.toFixed(2);
-        }
-
-        function saveLog() {
-            const log = {
-                d: document.getElementById('tool').value,
-                f: document.getElementById('rf').innerText,
-                s: document.getElementById('rs').innerText,
-                res: document.getElementById('res_status').value,
-                memo: document.getElementById('memo').value || "-",
-                date: new Date().toLocaleDateString()
-            };
-            let logs = JSON.parse(localStorage.getItem('smartLogs_v3.2') || '[]');
-            logs.unshift(log);
-            localStorage.setItem('smartLogs_v3.2', JSON.stringify(logs.slice(0, 10)));
-            calculate(); showLogs();
-            document.getElementById('memo').value = "";
-        }
-
-        function showLogs() {
-            const logs = JSON.parse(localStorage.getItem('smartLogs_v3.2') || '[]');
-            let html = logs.map(l => `<tr><td>${l.date}</td><td>Φ${l.d}</td><td>F${l.f}/S${l.s}</td><td>${l.res}</td><td>${l.memo}</td></tr>`).join('');
-            document.getElementById('logTable').innerHTML = logs.length ? '<tr><th>日付</th><th>工具</th><th>条件</th><th>結果</th><th>メモ</th></tr>' + html : '';
-        }
-
-        function exportData() {
-            const data = localStorage.getItem('smartLogs_v3.2');
-            const blob = new Blob([data], {type: 'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `abs_nav_v3.2.json`;
-            a.click();
-        }
-
-        function importData(input) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                localStorage.setItem('smartLogs_v3.2', reader.result);
-                calculate(); showLogs();
-                alert("実績を取り込みました！");
-            };
-            reader.readAsText(input.files[0]);
-        }
-
-        window.onload = () => { calculate(); showLogs(); };
-    </script>
-</body>
-</html>
+                <select id="res_status" style="flex:1;"><option value="OK">OK</option><option value="NG">NG</option></select>
+                <input type="text" id="memo" placeholder="メモ" style="flex:2; padding:8px;

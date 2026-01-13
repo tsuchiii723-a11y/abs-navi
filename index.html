@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MDX-50：ABS切削ナビ V4.4</title>
+    <title>切削実績ナビ V4.7 (Full Suite)</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
             --primary: #2563eb; --rough-color: #f59e0b; --fine-color: #06b6d4;
-            --danger: #ef4444; --success: #10b981; --bg: #f8fafc;
+            --danger: #ef4444; --success: #10b981; --bg: #f8fafc; --pp-color: #8b5cf6;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; overflow-x: hidden; }
         .container { width: 100%; max-width: 500px; background: white; padding: 18px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         
-        /* ヘッダー・バージョン表示 */
         .header { text-align: center; margin-bottom: 15px; }
         h1 { font-size: 1.2rem; color: var(--primary); margin: 0; font-weight: 800; }
         .version-badge { display: inline-block; font-size: 0.65rem; background: #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-top: 4px; }
@@ -22,29 +21,32 @@
         .section-label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin: 12px 0 6px 4px; display: block; }
         
         .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
-        .btn-group button { flex: 1; padding: 14px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.9rem; color: #64748b; }
+        .btn-group button { flex: 1; padding: 14px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.9rem; color: #64748b; transition: 0.2s; }
+        
+        button.active#mat-abs { background: #475569; color: white; border-color: #475569; }
+        button.active#mat-pp { background: var(--pp-color); color: white; border-color: var(--pp-color); }
         button.active#p-rough { background: var(--rough-color); color: white; border-color: var(--rough-color); }
         button.active#p-fine { background: var(--fine-color); color: white; border-color: var(--fine-color); }
-        button.active#m-norm { background: var(--primary); color: white; border-color: var(--primary); }
-        button.active#m-speed { background: var(--danger); color: white; border-color: var(--danger); }
 
-        .input-row { display: flex; flex-direction: column; gap: 10px; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 1rem; background: #fff; }
-
-        .result-card { background: #0f172a; color: white; padding: 18px; border-radius: 14px; margin: 15px 0; }
-        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; border: 2px solid white; }
-
+        .result-card { background: #0f172a; color: white; padding: 18px; border-radius: 14px; margin: 15px 0; border-left: 8px solid #475569; }
+        .result-card.pp-mode { border-left-color: var(--pp-color); }
+        
         .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .res-item { background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
         .res-label { font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 3px; }
-        .res-val { font-size: 1.3rem; font-weight: bold; font-family: monospace; color: #f8fafc; }
-        .m-area { grid-column: span 2; background: #334155; text-align: center; padding: 8px; border-radius: 8px; }
-
-        .log-btn { background: var(--success); color: white; border: none; padding: 16px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         
+        .actual-input { 
+            width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); 
+            color: #fff; font-size: 1.4rem; font-weight: bold; font-family: monospace; padding: 0; outline: none;
+        }
+        .suggested-val { font-size: 0.65rem; color: #64748b; display: block; margin-top: 2px; }
+
+        .log-btn { background: var(--success); color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; border: 2px solid white; }
+
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 15px; }
         th { text-align: left; padding: 8px 4px; color: #94a3b8; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
         .st-NG { color: var(--danger); font-weight: bold; }
         .st-OK { color: var(--success); font-weight: bold; }
     </style>
@@ -52,108 +54,115 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>ABS NAVI</h1>
-            <span class="version-badge">Ver 4.4 Cloud Sync</span>
+            <h1>切削実績ナビ</h1>
+            <span class="version-badge">Ver 4.7 Final (Learning Mode)</span>
         </div>
         
         <div id="syncStatus" onclick="loadLogs()">同期状態を確認中...</div>
 
+        <span class="section-label">素材選択</span>
+        <div class="btn-group">
+            <button id="mat-abs" class="active" onclick="updateMaterial('ABS')">ABS</button>
+            <button id="mat-pp" onclick="updateMaterial('PP')">PP</button>
+        </div>
+        
+        <span class="section-label">工程選択</span>
         <div class="btn-group">
             <button id="p-rough" class="active" onclick="updateProcess('rough')">荒削り</button>
             <button id="p-fine" onclick="updateProcess('fine')">仕上げ</button>
         </div>
-        <div class="btn-group">
-            <button id="m-norm" class="active" onclick="updateMode('normal')">通常速度</button>
-            <button id="m-speed" onclick="updateMode('speed')">加速モード</button>
-        </div>
 
-        <span class="section-label">工具設定・深さ</span>
-        <div class="input-row">
-            <select id="tool" onchange="calculate()">
-                <option value="0.8">Φ0.8 (XAL-BEM2LB0.4-8)</option>
+        <span class="section-label">使用工具 (ミスミ登録済)</span>
+        <div style="display:flex; gap:8px;">
+            <select id="tool" onchange="calculate()" style="flex:2; padding:12px; border-radius:10px; border:1px solid #e2e8f0; font-size: 0.9rem;">
+                <option value="0.25">Φ0.25 (XAL-BEM2LB0.25-5)</option>
+                <option value="0.4">Φ0.4 (XAL-BEM2LB0.4-8)</option>
+                <option value="0.5">Φ0.5 (XAL-BEM2LB0.5-10-6)</option>
+                <option value="0.75">Φ0.75 (XAL-BEM2LB0.75-10)</option>
                 <option value="1.0">Φ1.0 (XAL-PEM2LB1-10)</option>
                 <option value="2.0">Φ2.0 (SEC-PLEM2EXL2-20)</option>
-                <option value="3.0" selected>Φ3.0 (XAL-HPEM4L3)</option>
-                <option value="6.0">Φ6.0 (一般ラフィング)</option>
+                <option value="3.0" selected>Φ3.0 (XAL-HEM4L3)</option>
+                <option value="6.0">Φ6.0 (XAL-PEM4L6)</option>
             </select>
-            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" placeholder="切削深さ(mm)">
+            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0; font-size: 0.9rem;">
         </div>
 
-        <div class="result-card">
-            <div id="ngWarning" class="warning-banner">⚠️ 過去にこの条件付近でNG報告があります</div>
+        <div id="resultCard" class="result-card">
+            <div id="ngWarning" class="warning-banner">⚠️ 過去の失敗に基づき推奨を抑制中</div>
+            <span class="section-label" style="color:#fff; margin-top:0;">実測値を入力</span>
             <div class="res-grid">
-                <div class="res-item"><span class="res-label">回転数(S)</span><span id="rs" class="res-val">-</span></div>
-                <div class="res-item"><span class="res-label">送り速度(F)</span><span id="rf" class="res-val">-</span></div>
-                <div class="res-item"><span class="res-label">切込量(C)</span><span id="rc" class="res-val">-</span></div>
-                <div class="res-item"><span class="res-label">パス間隔(P)</span><span id="rp" class="res-val">-</span></div>
-                <div class="m-area"><span class="res-label" style="display:inline; margin-right:10px;">仕上げ代(M)</span><span id="rm" class="res-val">-</span></div>
+                <div class="res-item"><span class="res-label">回転数(S)</span><input type="number" id="input_s" class="actual-input"><span id="s_sug" class="suggested-val"></span></div>
+                <div class="res-item"><span class="res-label">送り速度(F)</span><input type="number" id="input_f" class="actual-input"><span id="s_feg" class="suggested-val"></span></div>
+                <div class="res-item"><span class="res-label">切込量(C)</span><input type="number" id="input_c" step="0.01" class="actual-input"><span id="s_ceg" class="suggested-val"></span></div>
+                <div class="res-item"><span class="res-label">パス間隔(P)</span><input type="number" id="input_p" step="0.01" class="actual-input"><span id="s_peg" class="suggested-val"></span></div>
             </div>
         </div>
 
-        <button id="saveBtn" class="log-btn" onclick="saveLog()">結果をクラウドに送信</button>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-            <select id="res_status" style="width:80px; font-weight:bold;"><option value="OK">OK</option><option value="NG">NG</option></select>
-            <input type="text" id="memo" placeholder="メモ（任意）" style="flex:1; border:1px solid #e2e8f0; border-radius:10px; padding:10px;">
+        <div style="display:flex; gap:8px;">
+            <select id="res_status" style="width:80px; font-weight:bold; border-radius:10px; border:1px solid #e2e8f0;"><option value="OK">OK</option><option value="NG">NG</option></select>
+            <input type="text" id="memo" placeholder="備考：溶けた、バリ、良好など" style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
         </div>
+        <button id="saveBtn" class="log-btn" onclick="saveLog()">切削実績をクラウドへ記録</button>
         
         <table id="logTable"></table>
     </div>
 
     <script>
-        // 設定されたAPI URL
         const API_URL = "https://script.google.com/macros/s/AKfycbxEWBEYOHap3Y9EybJQUefFcQcHDJiyvDUDmm4ImPY0zB9gSTYDZJ1vicsmDIhi9exEmw/exec";
+        let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [];
 
-        let currentProcess = 'rough';
-        let currentMode = 'normal';
-        let globalLogs = [];
-
-        function updateProcess(p) {
-            currentProcess = p;
-            document.getElementById('p-rough').classList.toggle('active', p === 'rough');
-            document.getElementById('p-fine').classList.toggle('active', p === 'fine');
-            calculate();
+        function updateMaterial(m) { 
+            currentMaterial = m; 
+            document.getElementById('mat-abs').className = m==='ABS'?'active':''; 
+            document.getElementById('mat-pp').className = m==='PP'?'active':''; 
+            document.getElementById('resultCard').className = 'result-card' + (m==='PP'?' pp-mode':'');
+            calculate(); 
         }
-
-        function updateMode(m) {
-            currentMode = m;
-            document.getElementById('m-norm').classList.toggle('active', m === 'normal');
-            document.getElementById('m-speed').classList.toggle('active', m === 'speed');
-            calculate();
+        function updateProcess(p) { 
+            currentProcess = p; 
+            document.getElementById('p-rough').className = p==='rough'?'active':''; 
+            document.getElementById('p-fine').className = p==='fine'?'active':''; 
+            calculate(); 
         }
 
         function calculate() {
             const d = parseFloat(document.getElementById('tool').value);
             const h = parseFloat(document.getElementById('depth').value);
-            let f, s, c, p, m = 0.20;
+            let f, s, c, p;
 
-            if(d <= 0.8) { s=14000; f=400; c=0.05; p=0.3; } 
+            // 基本推奨値 (d=径)
+            if(d <= 0.4) { s=15000; f=200; c=0.02; p=0.1; } 
+            else if(d <= 0.8) { s=14000; f=400; c=0.05; p=0.3; } 
             else if(d <= 1.0) { s=12000; f=550; c=0.1; p=0.4; } 
             else if(d <= 2.0) { s=11000; f=900; c=0.15; p=0.7; }
             else if(d <= 3.0) { s=10000; f=1200; c=0.2; p=1.0; } 
             else { s=6500; f=1400; c=0.5; p=2.0; }
 
-            if(currentProcess==='fine'){ s*=1.2; f*=0.8; c=(d<=1?0.05:0.1); p=0.1; m=0; }
-            if(currentMode==='speed'){ f*=1.6; s*=1.1; }
+            if(currentProcess==='fine'){ s*=1.1; f*=0.7; c=(d<=1?0.05:0.1); p=0.1; }
+            if(currentMaterial==='PP'){ s*=0.8; if(currentProcess==='fine') p=0.07; }
             if(h > d*4) f*=0.7;
 
-            s = Math.min(Math.round(s), 15000); 
-            f = Math.min(Math.round(f), 3600);
+            // 過去のNG学習
+            const hasNG = globalLogs.find(l => parseFloat(l[2]) == d && l[3].startsWith(currentMaterial) && l[10] === 'NG');
+            if(hasNG) {
+                f *= 0.8; s *= 0.9;
+                document.getElementById('ngWarning').style.display = 'block';
+            } else {
+                document.getElementById('ngWarning').style.display = 'none';
+            }
 
-            document.getElementById('rs').innerText = s.toLocaleString();
-            document.getElementById('rf').innerText = f.toLocaleString();
-            document.getElementById('rc').innerText = c.toFixed(2);
-            document.getElementById('rp').innerText = p.toFixed(2);
-            document.getElementById('rm').innerText = m.toFixed(2);
-
-            checkRisk(d, s, f);
+            setValues(Math.round(s), Math.round(f), c.toFixed(2), p.toFixed(2));
         }
 
-        function checkRisk(d, s, f) {
-            const warning = document.getElementById('ngWarning');
-            const risk = globalLogs.find(log => 
-                parseFloat(log[2]) == d && log[10] === 'NG' && (f >= parseFloat(log[5]) * 0.9)
-            );
-            warning.style.display = risk ? 'block' : 'none';
+        function setValues(s, f, c, p) {
+            document.getElementById('s_sug').innerText = "推奨: " + s;
+            document.getElementById('s_feg').innerText = "推奨: " + f;
+            document.getElementById('s_ceg').innerText = "推奨: " + c;
+            document.getElementById('s_peg').innerText = "推奨: " + p;
+            document.getElementById('input_s').value = s;
+            document.getElementById('input_f').value = f;
+            document.getElementById('input_c').value = c;
+            document.getElementById('input_p').value = p;
         }
 
         async function saveLog() {
@@ -161,50 +170,41 @@
             const data = {
                 toolName: document.getElementById('tool').options[document.getElementById('tool').selectedIndex].text,
                 d: document.getElementById('tool').value,
-                process: currentProcess === 'rough' ? '荒削り' : '仕上げ',
-                mode: currentMode === 'normal' ? '通常' : '加速',
-                f: document.getElementById('rf').innerText.replace(/,/g, ''),
-                s: document.getElementById('rs').innerText.replace(/,/g, ''),
-                c: document.getElementById('rc').innerText,
-                p: document.getElementById('rp').innerText,
-                m: document.getElementById('rm').innerText,
+                process: `${currentMaterial}-${currentProcess==='rough'?'荒':'仕'}`,
+                mode: "実測値入力",
+                f: document.getElementById('input_f').value,
+                s: document.getElementById('input_s').value,
+                c: document.getElementById('input_c').value,
+                p: document.getElementById('input_p').value,
+                m: "0.20", 
                 res: document.getElementById('res_status').value,
                 memo: document.getElementById('memo').value || "-"
             };
-            btn.disabled = true; btn.innerText = "送信中...";
+            btn.disabled = true; btn.innerText = "記録中...";
             try {
                 await fetch(API_URL, { method: "POST", body: JSON.stringify(data) });
                 document.getElementById('memo').value = "";
-                btn.innerText = "送信完了";
+                btn.innerText = "記録完了";
                 loadLogs();
-            } catch (e) { alert("通信エラーが発生しました"); }
-            setTimeout(() => { btn.disabled = false; btn.innerText = "結果をクラウドに送信"; }, 2000);
+            } catch (e) { alert("通信エラー"); }
+            setTimeout(() => { btn.disabled = false; btn.innerText = "切削実績をクラウドへ記録"; }, 2000);
         }
 
         async function loadLogs() {
-            const status = document.getElementById('syncStatus');
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
                 globalLogs = data;
-                let html = '<tr><th>工具</th><th>F/S</th><th>結果</th></tr>';
+                let html = '<tr><th>工具/素材</th><th>実測 F/S</th><th>結果</th></tr>';
                 data.slice().reverse().slice(0, 5).forEach(r => {
-                    html += `<tr>
-                        <td>Φ${r[2]}<br>${r[3]}</td>
-                        <td>F${r[5]}<br>S${r[6]}</td>
-                        <td class="st-${r[10]}">${r[10]}<br><small>${r[11]}</small></td>
-                    </tr>`;
+                    html += `<tr><td>Φ${r[2]}<br>${r[3]}</td><td>F${r[5]}<br>S${r[6]}</td><td class="st-${r[10]}">${r[10]}<br><small>${r[11]}</small></td></tr>`;
                 });
                 document.getElementById('logTable').innerHTML = html;
-                status.innerText = "● 同期済み（タップで更新）"; status.style.color = "var(--success)";
+                document.getElementById('syncStatus').innerText = "● チームの切削実績を同期済";
                 calculate();
-            } catch (e) { 
-                status.innerText = "⚠️ オフライン（タップして再試行）"; 
-                status.style.color = "var(--danger)";
-            }
+            } catch (e) { document.getElementById('syncStatus').innerText = "⚠️ オフライン"; }
         }
-
-        window.onload = () => { calculate(); loadLogs(); setInterval(loadLogs, 60000); };
+        window.onload = () => { loadLogs(); setInterval(loadLogs, 60000); };
     </script>
 </body>
 </html>

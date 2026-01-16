@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>切削実績ナビ V4.7 (Full Suite)</title>
+    <title>切削ナビ V4.9 (Safety vs Fastest)</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
@@ -13,40 +13,45 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; justify-content: center; overflow-x: hidden; }
         .container { width: 100%; max-width: 500px; background: white; padding: 18px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         
-        .header { text-align: center; margin-bottom: 15px; }
+        .header { text-align: center; margin-bottom: 10px; }
         h1 { font-size: 1.2rem; color: var(--primary); margin: 0; font-weight: 800; }
         .version-badge { display: inline-block; font-size: 0.65rem; background: #e2e8f0; color: #64748b; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-top: 4px; }
         
-        #syncStatus { text-align: center; font-size: 0.7rem; margin-bottom: 12px; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; }
+        #syncStatus { text-align: center; font-size: 0.7rem; margin-bottom: 12px; padding: 6px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; }
         .section-label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin: 12px 0 6px 4px; display: block; }
         
-        .btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
-        .btn-group button { flex: 1; padding: 14px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.9rem; color: #64748b; transition: 0.2s; }
+        .btn-group { display: flex; gap: 8px; margin-bottom: 8px; }
+        .btn-group button { flex: 1; padding: 12px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.85rem; color: #64748b; }
         
         button.active#mat-abs { background: #475569; color: white; border-color: #475569; }
         button.active#mat-pp { background: var(--pp-color); color: white; border-color: var(--pp-color); }
         button.active#p-rough { background: var(--rough-color); color: white; border-color: var(--rough-color); }
         button.active#p-fine { background: var(--fine-color); color: white; border-color: var(--fine-color); }
 
-        .result-card { background: #0f172a; color: white; padding: 18px; border-radius: 14px; margin: 15px 0; border-left: 8px solid #475569; }
-        .result-card.pp-mode { border-left-color: var(--pp-color); }
-        
-        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .res-item { background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
-        .res-label { font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 3px; }
-        
-        .actual-input { 
-            width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); 
-            color: #fff; font-size: 1.4rem; font-weight: bold; font-family: monospace; padding: 0; outline: none;
-        }
-        .suggested-val { font-size: 0.65rem; color: #64748b; display: block; margin-top: 2px; }
+        /* メイン比較カード */
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .comp-card { padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; border: 2px solid transparent; position: relative; }
+        .comp-card.safety { background: #f1f5f9; border-color: #e2e8f0; }
+        .comp-card.fastest { background: #ecfdf5; border-color: #d1fae5; }
+        .comp-card:active { transform: scale(0.98); }
+        .comp-card.has-data { border-color: var(--success); }
+        .comp-label { font-size: 0.65rem; font-weight: bold; display: block; margin-bottom: 4px; }
+        .comp-val { font-size: 1.1rem; font-weight: 800; font-family: monospace; display: block; }
+        .comp-sub { font-size: 0.6rem; color: #64748b; }
 
-        .log-btn { background: var(--success); color: white; border: none; padding: 18px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; border: 2px solid white; }
+        /* 実測入力エリア */
+        .result-card { background: #0f172a; color: white; padding: 15px; border-radius: 14px; margin-bottom: 10px; border-left: 8px solid var(--primary); }
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .res-item { background: #1e293b; padding: 8px; border-radius: 10px; }
+        .res-label { font-size: 0.6rem; color: #94a3b8; display: block; }
+        .actual-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); color: #fff; font-size: 1.2rem; font-weight: bold; font-family: monospace; outline: none; }
+
+        .log-btn { background: var(--success); color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 15px; }
         th { text-align: left; padding: 8px 4px; color: #94a3b8; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; }
         .st-NG { color: var(--danger); font-weight: bold; }
         .st-OK { color: var(--success); font-weight: bold; }
     </style>
@@ -54,83 +59,73 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>切削実績ナビ</h1>
-            <span class="version-badge">Ver 4.7 Final (Learning Mode)</span>
+            <h1>切削ナビ V4.9</h1>
+            <span class="version-badge">Safety & Fastest Learning</span>
         </div>
         
-        <div id="syncStatus" onclick="loadLogs()">同期状態を確認中...</div>
+        <div id="syncStatus">同期中...</div>
 
-        <span class="section-label">素材選択</span>
         <div class="btn-group">
             <button id="mat-abs" class="active" onclick="updateMaterial('ABS')">ABS</button>
             <button id="mat-pp" onclick="updateMaterial('PP')">PP</button>
-        </div>
-        
-        <span class="section-label">工程選択</span>
-        <div class="btn-group">
             <button id="p-rough" class="active" onclick="updateProcess('rough')">荒削り</button>
             <button id="p-fine" onclick="updateProcess('fine')">仕上げ</button>
         </div>
 
-        <span class="section-label">使用工具 (ミスミ登録済)</span>
         <div style="display:flex; gap:8px;">
-            <select id="tool" onchange="calculate()" style="flex:2; padding:12px; border-radius:10px; border:1px solid #e2e8f0; font-size: 0.9rem;">
-                <option value="0.25">Φ0.25 (XAL-BEM2LB0.25-5)</option>
-                <option value="0.4">Φ0.4 (XAL-BEM2LB0.4-8)</option>
-                <option value="0.5">Φ0.5 (XAL-BEM2LB0.5-10-6)</option>
-                <option value="0.75">Φ0.75 (XAL-BEM2LB0.75-10)</option>
-                <option value="1.0">Φ1.0 (XAL-PEM2LB1-10)</option>
-                <option value="2.0">Φ2.0 (SEC-PLEM2EXL2-20)</option>
-                <option value="3.0" selected>Φ3.0 (XAL-HEM4L3)</option>
-                <option value="6.0">Φ6.0 (XAL-PEM4L6)</option>
+            <select id="tool" onchange="calculate()" style="flex:2; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
+                <option value="0.25">Φ0.25</option><option value="0.4">Φ0.4</option><option value="0.5">Φ0.5</option>
+                <option value="0.75">Φ0.75</option><option value="1.0">Φ1.0</option><option value="2.0">Φ2.0</option>
+                <option value="3.0" selected>Φ3.0</option><option value="6.0">Φ6.0</option>
             </select>
-            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0; font-size: 0.9rem;">
+            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
         </div>
 
-        <div id="resultCard" class="result-card">
-            <div id="ngWarning" class="warning-banner">⚠️ 過去の失敗に基づき推奨を抑制中</div>
-            <span class="section-label" style="color:#fff; margin-top:0;">実測値を入力</span>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">回転数(S)</span><input type="number" id="input_s" class="actual-input"><span id="s_sug" class="suggested-val"></span></div>
-                <div class="res-item"><span class="res-label">送り速度(F)</span><input type="number" id="input_f" class="actual-input"><span id="s_feg" class="suggested-val"></span></div>
-                <div class="res-item"><span class="res-label">切込量(C)</span><input type="number" id="input_c" step="0.01" class="actual-input"><span id="s_ceg" class="suggested-val"></span></div>
-                <div class="res-item"><span class="res-label">パス間隔(P)</span><input type="number" id="input_p" step="0.01" class="actual-input"><span id="s_peg" class="suggested-val"></span></div>
+        <div class="comparison-grid">
+            <div class="comp-card safety" onclick="applySuggested('safety')">
+                <span class="comp-label">🛡️ 安全推奨</span>
+                <span id="safety-f" class="comp-val">-</span>
+                <span id="safety-s" class="comp-sub">-</span>
+            </div>
+            <div id="fastest-card" class="comp-card fastest" onclick="applySuggested('fastest')">
+                <span class="comp-label">⚡ 実績最速</span>
+                <span id="fastest-f" class="comp-val">なし</span>
+                <span id="fastest-s" class="comp-sub">データ未蓄積</span>
             </div>
         </div>
 
-        <div style="display:flex; gap:8px;">
-            <select id="res_status" style="width:80px; font-weight:bold; border-radius:10px; border:1px solid #e2e8f0;"><option value="OK">OK</option><option value="NG">NG</option></select>
-            <input type="text" id="memo" placeholder="備考：溶けた、バリ、良好など" style="flex:1; padding:12px; border-radius:10px; border:1px solid #e2e8f0;">
+        <div id="resultCard" class="result-card">
+            <div id="ngWarning" class="warning-banner">⚠️ 過去にこの付近で失敗あり！</div>
+            <div class="res-grid">
+                <div class="res-item"><span class="res-label">回転数(S)</span><input type="number" id="input_s" class="actual-input"></div>
+                <div class="res-item"><span class="res-label">送り速度(F)</span><input type="number" id="input_f" class="actual-input"></div>
+                <div class="res-item"><span class="res-label">切込量(C)</span><input type="number" id="input_c" step="0.01" class="actual-input"></div>
+                <div class="res-item"><span class="res-label">パス間隔(P)</span><input type="number" id="input_p" step="0.01" class="actual-input"></div>
+            </div>
         </div>
-        <button id="saveBtn" class="log-btn" onclick="saveLog()">切削実績をクラウドへ記録</button>
+
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <select id="res_status" style="width:70px; font-weight:bold; border-radius:10px; border:1px solid #e2e8f0;"><option value="OK">OK</option><option value="NG">NG</option></select>
+            <input type="text" id="memo" placeholder="備考：150%成功、ビビり等" style="flex:1; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
+        </div>
+        <button id="saveBtn" class="log-btn" onclick="saveLog()">この実測値を記録する</button>
         
         <table id="logTable"></table>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzBC4Ygj6neQIS4p6KTbnyoIvt2OO_Gd1v_gkzS6Sgaqi25v2P5C2potJuBedf-CS71tA/exec";
-        let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [];
+        const API_URL = "あなたのGASウェブアプリURL";
+        let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [], lastSafety = {}, lastFastest = {};
 
-        function updateMaterial(m) { 
-            currentMaterial = m; 
-            document.getElementById('mat-abs').className = m==='ABS'?'active':''; 
-            document.getElementById('mat-pp').className = m==='PP'?'active':''; 
-            document.getElementById('resultCard').className = 'result-card' + (m==='PP'?' pp-mode':'');
-            calculate(); 
-        }
-        function updateProcess(p) { 
-            currentProcess = p; 
-            document.getElementById('p-rough').className = p==='rough'?'active':''; 
-            document.getElementById('p-fine').className = p==='fine'?'active':''; 
-            calculate(); 
-        }
+        function updateMaterial(m) { currentMaterial = m; document.getElementById('mat-abs').className = m==='ABS'?'active':''; document.getElementById('mat-pp').className = m==='PP'?'active':''; calculate(); }
+        function updateProcess(p) { currentProcess = p; document.getElementById('p-rough').className = p==='rough'?'active':''; document.getElementById('p-fine').className = p==='fine'?'active':''; calculate(); }
 
         function calculate() {
             const d = parseFloat(document.getElementById('tool').value);
             const h = parseFloat(document.getElementById('depth').value);
             let f, s, c, p;
 
-            // 基本推奨値 (d=径)
+            // --- 🛡️ 安全推奨ロジック ---
             if(d <= 0.4) { s=15000; f=200; c=0.02; p=0.1; } 
             else if(d <= 0.8) { s=14000; f=400; c=0.05; p=0.3; } 
             else if(d <= 1.0) { s=12000; f=550; c=0.1; p=0.4; } 
@@ -142,27 +137,41 @@
             if(currentMaterial==='PP'){ s*=0.8; if(currentProcess==='fine') p=0.07; }
             if(h > d*4) f*=0.7;
 
-            // 過去のNG学習
-            const hasNG = globalLogs.find(l => parseFloat(l[2]) == d && l[3].startsWith(currentMaterial) && l[10] === 'NG');
-            if(hasNG) {
-                f *= 0.8; s *= 0.9;
-                document.getElementById('ngWarning').style.display = 'block';
+            lastSafety = { s: Math.round(s), f: Math.round(f), c: c.toFixed(2), p: p.toFixed(2) };
+            document.getElementById('safety-f').innerText = "F" + lastSafety.f;
+            document.getElementById('safety-s').innerText = "S" + lastSafety.s;
+
+            // --- ⚡ 実績最速ロジック ---
+            const okLogs = globalLogs.filter(l => parseFloat(l[2]) == d && l[3].startsWith(currentMaterial) && l[3].endsWith(currentProcess==='rough'?'荒':'仕') && l[10]==='OK');
+            const cardF = document.getElementById('fastest-card');
+            
+            if(okLogs.length > 0) {
+                const fastest = okLogs.reduce((prev, curr) => (parseFloat(prev[5]) > parseFloat(curr[5])) ? prev : curr);
+                lastFastest = { s: fastest[6], f: fastest[5], c: fastest[7], p: fastest[8] };
+                document.getElementById('fastest-f').innerText = "F" + lastFastest.f;
+                document.getElementById('fastest-s').innerText = "S" + lastFastest.s;
+                cardF.classList.add('has-data');
             } else {
-                document.getElementById('ngWarning').style.display = 'none';
+                lastFastest = null;
+                document.getElementById('fastest-f').innerText = "データなし";
+                document.getElementById('fastest-s').innerText = "実績待ち";
+                cardF.classList.remove('has-data');
             }
 
-            setValues(Math.round(s), Math.round(f), c.toFixed(2), p.toFixed(2));
+            // ⚠️ 失敗警告
+            const hasNG = globalLogs.find(l => parseFloat(l[2]) == d && l[3].startsWith(currentMaterial) && l[10] === 'NG');
+            document.getElementById('ngWarning').style.display = hasNG ? 'block' : 'none';
+
+            // 初期値は「安全推奨」をセット
+            applySuggested('safety');
         }
 
-        function setValues(s, f, c, p) {
-            document.getElementById('s_sug').innerText = "推奨: " + s;
-            document.getElementById('s_feg').innerText = "推奨: " + f;
-            document.getElementById('s_ceg').innerText = "推奨: " + c;
-            document.getElementById('s_peg').innerText = "推奨: " + p;
-            document.getElementById('input_s').value = s;
-            document.getElementById('input_f').value = f;
-            document.getElementById('input_c').value = c;
-            document.getElementById('input_p').value = p;
+        function applySuggested(mode) {
+            const data = (mode === 'fastest' && lastFastest) ? lastFastest : lastSafety;
+            document.getElementById('input_s').value = data.s;
+            document.getElementById('input_f').value = data.f;
+            document.getElementById('input_c').value = data.c;
+            document.getElementById('input_p').value = data.p;
         }
 
         async function saveLog() {
@@ -171,23 +180,18 @@
                 toolName: document.getElementById('tool').options[document.getElementById('tool').selectedIndex].text,
                 d: document.getElementById('tool').value,
                 process: `${currentMaterial}-${currentProcess==='rough'?'荒':'仕'}`,
-                mode: "実測値入力",
-                f: document.getElementById('input_f').value,
-                s: document.getElementById('input_s').value,
-                c: document.getElementById('input_c').value,
-                p: document.getElementById('input_p').value,
-                m: "0.20", 
-                res: document.getElementById('res_status').value,
-                memo: document.getElementById('memo').value || "-"
+                mode: "V4.9記録",
+                f: document.getElementById('input_f').value, s: document.getElementById('input_s').value,
+                c: document.getElementById('input_c').value, p: document.getElementById('input_p').value,
+                m: "0.20", res: document.getElementById('res_status').value, memo: document.getElementById('memo').value || "-"
             };
             btn.disabled = true; btn.innerText = "記録中...";
             try {
                 await fetch(API_URL, { method: "POST", body: JSON.stringify(data) });
-                document.getElementById('memo').value = "";
-                btn.innerText = "記録完了";
-                loadLogs();
-            } catch (e) { alert("通信エラー"); }
-            setTimeout(() => { btn.disabled = false; btn.innerText = "切削実績をクラウドへ記録"; }, 2000);
+                document.getElementById('memo').value = ""; btn.innerText = "記録完了";
+                await loadLogs();
+            } catch (e) { alert("送信エラー"); }
+            setTimeout(() => { btn.disabled = false; btn.innerText = "この実測値を記録する"; }, 2000);
         }
 
         async function loadLogs() {
@@ -197,10 +201,10 @@
                 globalLogs = data;
                 let html = '<tr><th>工具/素材</th><th>実測 F/S</th><th>結果</th></tr>';
                 data.slice().reverse().slice(0, 5).forEach(r => {
-                    html += `<tr><td>Φ${r[2]}<br>${r[3]}</td><td>F${r[5]}<br>S${r[6]}</td><td class="st-${r[10]}">${r[10]}<br><small>${r[11]}</small></td></tr>`;
+                    html += `<tr><td>Φ${r[2]}<br>${r[3]}</td><td>F${r[5]}<br>S${r[6]}</td><td class="st-${r[10]}">${r[10]}</td></tr>`;
                 });
                 document.getElementById('logTable').innerHTML = html;
-                document.getElementById('syncStatus').innerText = "● チームの切削実績を同期済";
+                document.getElementById('syncStatus').innerText = "● チームの知恵を同期済";
                 calculate();
             } catch (e) { document.getElementById('syncStatus').innerText = "⚠️ オフライン"; }
         }
@@ -208,4 +212,3 @@
     </script>
 </body>
 </html>
-

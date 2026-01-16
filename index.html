@@ -114,7 +114,7 @@
     </div>
 
     <script>
-        const API_URL = "あなたのGASウェブアプリURL";
+        const API_URL = "https://script.google.com/macros/s/AKfycbx_o_12SItvh6smoE5I0578shai5L0Qk3o7ljK3ABpigWEYCkKyZsDJBHg0-7KaeReeLg/exec";
         let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [], lastSafety = {}, lastFastest = {};
 
         function updateMaterial(m) { currentMaterial = m; document.getElementById('mat-abs').className = m==='ABS'?'active':''; document.getElementById('mat-pp').className = m==='PP'?'active':''; calculate(); }
@@ -212,3 +212,4 @@
     </script>
 </body>
 </html>
+

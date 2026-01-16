@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>切削ナビ V4.9 (Safety vs Fastest)</title>
+    <title>切削ナビ V5.0 (Tool Master Sync)</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
@@ -21,37 +21,37 @@
         .section-label { font-size: 0.75rem; font-weight: bold; color: #64748b; margin: 12px 0 6px 4px; display: block; }
         
         .btn-group { display: flex; gap: 8px; margin-bottom: 8px; }
-        .btn-group button { flex: 1; padding: 12px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.85rem; color: #64748b; }
+        .btn-group button { flex: 1; padding: 12px 2px; border: 2px solid #f1f5f9; border-radius: 10px; cursor: pointer; font-weight: bold; background: #f1f5f9; font-size: 0.85rem; color: #64748b; transition: 0.2s; }
         
         button.active#mat-abs { background: #475569; color: white; border-color: #475569; }
         button.active#mat-pp { background: var(--pp-color); color: white; border-color: var(--pp-color); }
         button.active#p-rough { background: var(--rough-color); color: white; border-color: var(--rough-color); }
         button.active#p-fine { background: var(--fine-color); color: white; border-color: var(--fine-color); }
 
-        /* メイン比較カード */
+        /* 比較カード */
         .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .comp-card { padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; border: 2px solid transparent; position: relative; }
+        .comp-card { padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
         .comp-card.safety { background: #f1f5f9; border-color: #e2e8f0; }
         .comp-card.fastest { background: #ecfdf5; border-color: #d1fae5; }
-        .comp-card:active { transform: scale(0.98); }
-        .comp-card.has-data { border-color: var(--success); }
+        .comp-card.has-data { border-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1); }
+        .comp-card:active { transform: scale(0.95); }
         .comp-label { font-size: 0.65rem; font-weight: bold; display: block; margin-bottom: 4px; }
         .comp-val { font-size: 1.1rem; font-weight: 800; font-family: monospace; display: block; }
         .comp-sub { font-size: 0.6rem; color: #64748b; }
 
-        /* 実測入力エリア */
+        /* 入力エリア */
         .result-card { background: #0f172a; color: white; padding: 15px; border-radius: 14px; margin-bottom: 10px; border-left: 8px solid var(--primary); }
         .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .res-item { background: #1e293b; padding: 8px; border-radius: 10px; }
         .res-label { font-size: 0.6rem; color: #94a3b8; display: block; }
-        .actual-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); color: #fff; font-size: 1.2rem; font-weight: bold; font-family: monospace; outline: none; }
+        .actual-input { width: 100%; background: transparent; border: none; border-bottom: 2px solid var(--primary); color: #fff; font-size: 1.2rem; font-weight: bold; font-family: monospace; outline: none; padding: 2px 0; }
 
-        .log-btn { background: var(--success); color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .log-btn { background: var(--success); color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 5px; }
         .warning-banner { background: var(--danger); color: white; font-size: 0.75rem; padding: 8px; border-radius: 8px; margin-bottom: 10px; display: none; text-align: center; font-weight: bold; }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 15px; }
         th { text-align: left; padding: 8px 4px; color: #94a3b8; border-bottom: 2px solid #f1f5f9; }
-        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; }
+        td { padding: 8px 4px; border-bottom: 1px solid #f8fafc; line-height: 1.3; }
         .st-NG { color: var(--danger); font-weight: bold; }
         .st-OK { color: var(--success); font-weight: bold; }
     </style>
@@ -59,8 +59,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>切削ナビ V4.9</h1>
-            <span class="version-badge">Safety & Fastest Learning</span>
+            <h1>切削ナビ V5.0</h1>
+            <span class="version-badge">スプレッドシート連動・最速学習</span>
         </div>
         
         <div id="syncStatus">同期中...</div>
@@ -72,17 +72,16 @@
             <button id="p-fine" onclick="updateProcess('fine')">仕上げ</button>
         </div>
 
+        <span class="section-label">工具選択 (マスター読込済)</span>
         <div style="display:flex; gap:8px;">
-            <select id="tool" onchange="calculate()" style="flex:2; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
-                <option value="0.25">Φ0.25</option><option value="0.4">Φ0.4</option><option value="0.5">Φ0.5</option>
-                <option value="0.75">Φ0.75</option><option value="1.0">Φ1.0</option><option value="2.0">Φ2.0</option>
-                <option value="3.0" selected>Φ3.0</option><option value="6.0">Φ6.0</option>
+            <select id="tool" onchange="calculate()" style="flex:1; min-width:0; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.75rem;">
+                <option value="">読込中...</option>
             </select>
-            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" style="flex:1; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
+            <input type="number" id="depth" value="5.0" step="0.1" oninput="calculate()" style="width:70px; padding:10px; border-radius:10px; border:1px solid #e2e8f0; font-size:0.85rem;">
         </div>
 
         <div class="comparison-grid">
-            <div class="comp-card safety" onclick="applySuggested('safety')">
+            <div id="safety-card" class="comp-card safety" onclick="applySuggested('safety')">
                 <span class="comp-label">🛡️ 安全推奨</span>
                 <span id="safety-f" class="comp-val">-</span>
                 <span id="safety-s" class="comp-sub">-</span>
@@ -95,7 +94,7 @@
         </div>
 
         <div id="resultCard" class="result-card">
-            <div id="ngWarning" class="warning-banner">⚠️ 過去にこの付近で失敗あり！</div>
+            <div id="ngWarning" class="warning-banner">⚠️ 過去にNG履歴あり！慎重に。</div>
             <div class="res-grid">
                 <div class="res-item"><span class="res-label">回転数(S)</span><input type="number" id="input_s" class="actual-input"></div>
                 <div class="res-item"><span class="res-label">送り速度(F)</span><input type="number" id="input_f" class="actual-input"></div>
@@ -115,17 +114,45 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbx_o_12SItvh6smoE5I0578shai5L0Qk3o7ljK3ABpigWEYCkKyZsDJBHg0-7KaeReeLg/exec";
-        let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [], lastSafety = {}, lastFastest = {};
+        let currentMaterial = 'ABS', currentProcess = 'rough', globalLogs = [], toolMaster = [], lastSafety = {}, lastFastest = {};
 
         function updateMaterial(m) { currentMaterial = m; document.getElementById('mat-abs').className = m==='ABS'?'active':''; document.getElementById('mat-pp').className = m==='PP'?'active':''; calculate(); }
         function updateProcess(p) { currentProcess = p; document.getElementById('p-rough').className = p==='rough'?'active':''; document.getElementById('p-fine').className = p==='fine'?'active':''; calculate(); }
 
+        async function loadLogs() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                globalLogs = data.logs;
+                toolMaster = data.tools;
+                
+                const toolSelect = document.getElementById('tool');
+                const currentToolVal = toolSelect.value;
+                toolSelect.innerHTML = '';
+                toolMaster.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t[1]; opt.text = `Φ${t[1]} (${t[0]})`;
+                    toolSelect.appendChild(opt);
+                });
+                if(currentToolVal) toolSelect.value = currentToolVal;
+
+                let html = '<tr><th>工具/工程</th><th>F / S</th><th>結</th></tr>';
+                globalLogs.slice().reverse().slice(0, 5).forEach(r => {
+                    html += `<tr><td>Φ${r[2]}<br>${r[3]}</td><td>F${r[5]}<br>S${r[6]}</td><td class="st-${r[10]}">${r[10]}</td></tr>`;
+                });
+                document.getElementById('logTable').innerHTML = html;
+                document.getElementById('syncStatus').innerText = "● チームの最新データを同期済";
+                calculate();
+            } catch (e) { document.getElementById('syncStatus').innerText = "⚠️ 通信エラー"; }
+        }
+
         function calculate() {
             const d = parseFloat(document.getElementById('tool').value);
             const h = parseFloat(document.getElementById('depth').value);
-            let f, s, c, p;
+            if(!d) return;
 
             // --- 🛡️ 安全推奨ロジック ---
+            let f, s, c, p;
             if(d <= 0.4) { s=15000; f=200; c=0.02; p=0.1; } 
             else if(d <= 0.8) { s=14000; f=400; c=0.05; p=0.3; } 
             else if(d <= 1.0) { s=12000; f=550; c=0.1; p=0.4; } 
@@ -153,16 +180,14 @@
                 cardF.classList.add('has-data');
             } else {
                 lastFastest = null;
-                document.getElementById('fastest-f').innerText = "データなし";
+                document.getElementById('fastest-f').innerText = "なし";
                 document.getElementById('fastest-s').innerText = "実績待ち";
                 cardF.classList.remove('has-data');
             }
 
-            // ⚠️ 失敗警告
             const hasNG = globalLogs.find(l => parseFloat(l[2]) == d && l[3].startsWith(currentMaterial) && l[10] === 'NG');
             document.getElementById('ngWarning').style.display = hasNG ? 'block' : 'none';
 
-            // 初期値は「安全推奨」をセット
             applySuggested('safety');
         }
 
@@ -176,11 +201,12 @@
 
         async function saveLog() {
             const btn = document.getElementById('saveBtn');
+            const toolSelect = document.getElementById('tool');
             const data = {
-                toolName: document.getElementById('tool').options[document.getElementById('tool').selectedIndex].text,
-                d: document.getElementById('tool').value,
+                toolName: toolSelect.options[toolSelect.selectedIndex].text,
+                d: toolSelect.value,
                 process: `${currentMaterial}-${currentProcess==='rough'?'荒':'仕'}`,
-                mode: "V4.9記録",
+                mode: "V5.0実績",
                 f: document.getElementById('input_f').value, s: document.getElementById('input_s').value,
                 c: document.getElementById('input_c').value, p: document.getElementById('input_p').value,
                 m: "0.20", res: document.getElementById('res_status').value, memo: document.getElementById('memo').value || "-"
@@ -194,22 +220,7 @@
             setTimeout(() => { btn.disabled = false; btn.innerText = "この実測値を記録する"; }, 2000);
         }
 
-        async function loadLogs() {
-            try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                globalLogs = data;
-                let html = '<tr><th>工具/素材</th><th>実測 F/S</th><th>結果</th></tr>';
-                data.slice().reverse().slice(0, 5).forEach(r => {
-                    html += `<tr><td>Φ${r[2]}<br>${r[3]}</td><td>F${r[5]}<br>S${r[6]}</td><td class="st-${r[10]}">${r[10]}</td></tr>`;
-                });
-                document.getElementById('logTable').innerHTML = html;
-                document.getElementById('syncStatus').innerText = "● チームの知恵を同期済";
-                calculate();
-            } catch (e) { document.getElementById('syncStatus').innerText = "⚠️ オフライン"; }
-        }
         window.onload = () => { loadLogs(); setInterval(loadLogs, 60000); };
     </script>
 </body>
 </html>
-
